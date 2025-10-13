@@ -11,6 +11,7 @@ import {
   Alert,
 } from '@mui/material';
 import axios from 'axios';
+import {apiUrl}  from '../../../constant/api';
 
 export default function Login() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function Login() {
 
     try {
       setLoading(true);
-      const res = await axios.post('http://localhost:5000/api/login', { email });
+      const res = await axios.post(`${apiUrl}/login`, { email });
       console.log(res);
       if (res.status === 200) {
         setMessage('OTP sent successfully!');
@@ -62,7 +63,7 @@ export default function Login() {
 
     try {
       setLoading(true);
-      const res = await axios.post('http://localhost:5000/api/verify-otp', { email, otp });
+      const res = await axios.post(`${apiUrl}/verify-otp`, { email, otp });
       console.log(res);
       if (res.status === 200) {
       const token = res.data.user.token;  

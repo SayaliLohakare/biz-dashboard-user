@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import Cookies from "js-cookie";
+import {apiUrl}  from '../../../../../constant/api';
 
 const columns = [
   { field: "sr", headerName: "Sr No" },
@@ -31,9 +32,7 @@ const columns = [
   { field: "company_linkedin_url", headerName: "LinkedIn" },
 ];
 
-export default function DataTable({
-  apiUrl = "http://localhost:5000/api/user-purchased-data",
-}) {
+export default function DataTable() {
   const [data, setData] = useState([]);
   const [productName, setProductName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -63,7 +62,7 @@ export default function DataTable({
       setProductName(productName);
 
       const res = await axios.post(
-        apiUrl,
+        `${apiUrl}/user-purchased-data`,
         { userId: user.id, productId, page },
         { withCredentials: true }
       );

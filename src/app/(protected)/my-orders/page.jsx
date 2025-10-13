@@ -16,6 +16,7 @@ import {
   Link as MuiLink,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
+import {apiUrl}  from '../../../../constant/api';
 
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -36,7 +37,7 @@ export default function MyOrdersPage() {
         const user = JSON.parse(userInfoCookie);
 
         const { data } = await axios.post(
-          "http://localhost:5000/api/myorders",
+          `${apiUrl}/myorders`,
           { userId: user.id },
           { withCredentials: true }
         );
