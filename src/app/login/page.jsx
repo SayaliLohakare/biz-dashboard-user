@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import {apiUrl}  from '../../../constant/api';
+import Image from 'next/image';
 
 export default function Login() {
   const router = useRouter();
@@ -101,7 +102,14 @@ export default function Login() {
       >
         {/* Left Side - Form */}
         <Box sx={{ flex: 1, p: 6 }}>
-          <Typography variant="h5" gutterBottom>Welcome Back</Typography>
+          <Image
+            src="/logo.png"   // Path in the public folder
+            alt="Profile picture"
+            width={200}
+            height={60}
+            sx={{ mb: 3 }}
+          />
+          <Typography variant="h5" gutterBottom>Welcome</Typography>
           <Typography variant="body2" color="text.secondary" gutterBottom>
             Register / Sign in to continue
           </Typography>
@@ -160,23 +168,15 @@ export default function Login() {
         <Box
           sx={{
             flex: 1,
-            background: 'linear-gradient(to bottom, #0fa3b1, #28c2b1)',
+            background: 'linear-gradient(to bottom, #2ea3f2, rgba(23, 106, 161, 1))',
             color: '#fff',
             p: 6,
             display: { xs: 'none', md: 'block' },
           }}
         >
-          <Typography variant="h6" gutterBottom>The Best Source for Lead Generation</Typography>
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            Get leads that are qualified and active, ready to be directly
-            utilized for effective marketing campaigns, broad-reaching lists,
-            and various sales tactics.
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{ textDecoration: 'underline', cursor: 'pointer' }}
-          >
-            Search Within Our Best Curated Lists
+          <Typography variant="h4" gutterBottom>Explore Our Best Selling Data Solutions!</Typography>
+          <Typography variant="body2" sx={{ mb: 2, mt:4, fontSize: "1.1rem" }}>
+            Whether you require address appending, meeting regulatory compliance needs, email searches, funding data, jobs feed data or much more, BizProspex offers the ideal solution.
           </Typography>
         </Box>
       </Paper>

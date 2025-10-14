@@ -20,7 +20,7 @@ import {
   Person as PersonIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
-  ExpandLess,
+  Inventory2 as Inventory2,
   ExpandMore,
   Menu as MenuIcon,
 } from "@mui/icons-material";
@@ -103,12 +103,12 @@ export default function ProtectedLayout({ children }) {
 
           <ListItemButton component={Link} href="/my-orders">
             <ListItemIcon>
-              <DashboardIcon />
+              <Inventory2 />
             </ListItemIcon>
             {open && <ListItemText primary="My Orders" />}
           </ListItemButton>
 
-          <ListItemButton component={Link} href="/search-people">
+          {/* <ListItemButton component={Link} href="/search-people">
             <ListItemIcon>
               <DashboardIcon />
             </ListItemIcon>
@@ -120,7 +120,7 @@ export default function ProtectedLayout({ children }) {
               <DashboardIcon />
             </ListItemIcon>
             {open && <ListItemText primary="My purchased List" />}
-          </ListItemButton>
+          </ListItemButton> */}
 
           {/* Profile */}
           {/* <ListItemButton onClick={() => setOpenSubMenu(!openSubMenu)}>
@@ -142,20 +142,20 @@ export default function ProtectedLayout({ children }) {
           </Collapse> */}
 
           {/* Settings */}
-          <ListItemButton component={Link} href="/protected/dashboard/settings">
+          {/* <ListItemButton component={Link} href="/protected/dashboard/settings">
             <ListItemIcon>
               <SettingsIcon />
             </ListItemIcon>
             {open && <ListItemText primary="Settings" />}
-          </ListItemButton>
+          </ListItemButton> */}
 
           {/* Logout in Sidebar */}
-          <ListItemButton onClick={handleLogout}>
+          {/* <ListItemButton onClick={handleLogout}>
             <ListItemIcon>
               <LogoutIcon />
             </ListItemIcon>
             {open && <ListItemText primary="Logout" />}
-          </ListItemButton>
+          </ListItemButton> */}
         </List>
       </Drawer>
 

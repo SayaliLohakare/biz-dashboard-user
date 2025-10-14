@@ -67,7 +67,7 @@ export default function MyOrdersPage() {
 
         setOrders(flattened);
       } catch (err) {
-        console.error(err);
+        // console.error(err);
         setError(err.response?.data?.message || err.message);
       } finally {
         setLoading(false);
@@ -97,7 +97,7 @@ export default function MyOrdersPage() {
   if (error)
     return (
       <Box sx={{ p: 3 }}>
-        <Typography color="error">{error}</Typography>
+        <Typography >{error}</Typography>
       </Box>
     );
 
