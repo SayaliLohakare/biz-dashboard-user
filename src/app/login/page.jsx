@@ -37,7 +37,7 @@ export default function Login() {
 
     try {
       setLoading(true);
-      const res = await axios.post(`${apiUrl}/login`, { email });
+      const res = await axios.post(`${apiUrl}/request-otp`, { email });
       console.log(res);
       if (res.status === 200) {
         setMessage('OTP sent successfully!');
@@ -71,8 +71,8 @@ export default function Login() {
       console.log("Received token:", token);
       if (token) {
         // store in cookie for 1 hour
-        Cookies.set("authToken2", token, { expires: 1/24 }); // 1 hour
-        Cookies.set("userinfo", JSON.stringify(res.data.user), { expires: 1/24 }); // 1 hour
+        Cookies.set("authToken2", token, { expires: 5/24 }); // 5 hour
+        Cookies.set("userinfo", JSON.stringify(res.data.user), { expires: 5/24 }); // 5 hour
       }
         setMessage('Login successful!');
         router.push('/dashboard');

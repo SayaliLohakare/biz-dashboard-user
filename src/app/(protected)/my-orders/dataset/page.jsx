@@ -16,10 +16,11 @@ import {
   Stack,
   Tooltip,
   Checkbox,
+  Button,
 } from "@mui/material";
 import axios from "axios";
 import Cookies from "js-cookie";
-import {apiUrl}  from '../../../../../constant/api';
+import { apiUrl } from "../../../../../constant/api";
 
 const columns = [
   { field: "sr", headerName: "Sr No" },
@@ -36,10 +37,13 @@ export default function DataTable() {
   const [data, setData] = useState([]);
   const [productName, setProductName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedRows, setSelectedRows] = useState([]);
+  const [userId, setUserId] = useState(null);
+  const [productId, setProductId] = useState(null);
 
   const handleChange = (event, value) => setPage(value);
 
@@ -58,12 +62,15 @@ export default function DataTable() {
       }
 
       const user = JSON.parse(userInfoCookie);
-      const { id: productId, name: productName } = JSON.parse(storedProduct);
-      setProductName(productName);
+      const product = JSON.parse(storedProduct);
+
+      setUserId(user.id);
+      setProductId(product.id);
+      setProductName(product.name);
 
       const res = await axios.post(
         `${apiUrl}/user-purchased-data`,
-        { userId: user.id, productId, page },
+        { userId: user.id, productId: product.id, page },
         { withCredentials: true }
       );
 
@@ -77,41 +84,90 @@ export default function DataTable() {
     }
   };
 
+  const handleExport = async () => {
+    if (!userId || !productId) return;
+    setExportLoading(true);
+
+    try {
+      const response = await axios.post(
+        `${apiUrl}/export`,
+        { userId, productId },
+        {withCredentials: true,},
+        { responseType: "blob" }
+      );
+      console.log("Export response:", response);
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `${productName || "PurchasedList"}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("Export failed:", err);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
-  }, [apiUrl, page]);
+  }, [page]);
 
   const handleSelectRow = (row) => {
     const exists = selectedRows.find((r) => r.id === row.id);
-    if (exists) {
-      setSelectedRows(selectedRows.filter((r) => r.id !== row.id));
-    } else {
-      setSelectedRows([...selectedRows, row]);
-    }
+    setSelectedRows(
+      exists
+        ? selectedRows.filter((r) => r.id !== row.id)
+        : [...selectedRows, row]
+    );
   };
 
   const isSelected = (row) => selectedRows.some((r) => r.id === row.id);
 
   return (
     <Box sx={{ width: "100%", p: 2 }}>
-      <Typography variant="h5" gutterBottom fontWeight={600}>
-        {productName ? `${productName}` : "Purchased List"}
-      </Typography>
+      {/* Header: Title + Export Button */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
+        <Typography variant="h5" fontWeight={600}>
+          {productName || "Purchased List"}
+        </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleExport}
+          disabled={exportLoading}
+        >
+          {exportLoading ? "Exporting..." : "Export"}
+        </Button>
+      </Box>
 
+      {/* Table */}
       <Paper sx={{ borderRadius: 3, boxShadow: 3 }}>
         <TableContainer sx={{ overflowX: "auto" }}>
           <Table stickyHeader sx={{ minWidth: 1000 }}>
             <TableHead>
               <TableRow sx={{ background: "#1976d2" }}>
-                <TableCell sx={{ color: "white", fontWeight: "bold" }} />
+                {/* <TableCell sx={{ color: "white", fontWeight: "bold" }} /> */}
                 {columns.map((col) => (
                   <TableCell
                     key={col.field}
                     sx={{
                       color: "white",
                       fontWeight: "bold",
-                      background: "#1976d2",
                       whiteSpace: "nowrap",
+                      backgroundColor: "#1976d2",
                     }}
                   >
                     {col.headerName}
@@ -129,7 +185,11 @@ export default function DataTable() {
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={columns.length + 1} align="center" sx={{ color: "red" }}>
+                  <TableCell
+                    colSpan={columns.length + 1}
+                    align="center"
+                    sx={{ color: "red" }}
+                  >
                     {error}
                   </TableCell>
                 </TableRow>
@@ -141,20 +201,33 @@ export default function DataTable() {
                 </TableRow>
               ) : (
                 data.map((row, idx) => (
-                  <TableRow key={idx} hover>
-                    {/* Checkbox */}
-                    <TableCell padding="checkbox">
+                  <TableRow key={row.id || idx} hover>
+                    {/* <TableCell padding="checkbox">
                       <Checkbox
                         checked={isSelected(row)}
                         onChange={() => handleSelectRow(row)}
                       />
-                    </TableCell>
-
-                    {/* Table cells with tooltip */}
+                    </TableCell> */}
                     {columns.map((col) => (
-                      <TableCell key={col.field} sx={{ maxWidth: 150, whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
-                        <Tooltip title={row[col.field] ?? "-"} placement="top" arrow>
-                          <span>{col.field === "sr" ? (page - 1) * 10 + idx + 1 : row[col.field] ?? "-"}</span>
+                      <TableCell
+                        key={col.field}
+                        sx={{
+                          maxWidth: 150,
+                          whiteSpace: "nowrap",
+                          textOverflow: "ellipsis",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <Tooltip
+                          title={row[col.field] ?? "-"}
+                          placement="top"
+                          arrow
+                        >
+                          <span>
+                            {col.field === "sr"
+                              ? (page - 1) * 10 + idx + 1
+                              : row[col.field] ?? "-"}
+                          </span>
                         </Tooltip>
                       </TableCell>
                     ))}
@@ -167,7 +240,12 @@ export default function DataTable() {
       </Paper>
 
       {/* Pagination */}
-      <Stack direction="row" justifyContent="center" alignItems="center" sx={{ mt: 3 }}>
+      <Stack
+        direction="row"
+        justifyContent="center"
+        alignItems="center"
+        sx={{ mt: 3 }}
+      >
         <Pagination
           count={totalPages}
           page={page}
