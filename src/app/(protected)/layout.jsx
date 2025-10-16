@@ -38,7 +38,7 @@ export default function ProtectedLayout({ children }) {
 
   // Check cookie on mount
   useEffect(() => {
-    const token = Cookies.get("authToken2");
+    const token = Cookies.get("authToken2") || Cookies.get("authToken");
     if (!token) {
       router.push("/login");
     } else {
