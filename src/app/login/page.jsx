@@ -64,14 +64,14 @@ export default function Login() {
 
     try {
       setLoading(true);
-      const res = await axios.post(`${apiUrl}/verify-otp`, { email, otp });
+      const res = await axios.post(`${apiUrl}/verify-otp`, { email, otp },{withCredentials: true});
       console.log(res);
       if (res.status === 200) {
       const token = res.data.user.token;  
       console.log("Received token:", token);
       if (token) {
         // store in cookie for 1 hour
-        Cookies.set("authToken2", token, { expires: 5/24 }); // 5 hour
+       // Cookies.set("authToken2", token, { expires: 5/24 }); // 5 hour
         Cookies.set("userinfo", JSON.stringify(res.data.user), { expires: 5/24 }); // 5 hour
       }
         setMessage('Login successful!');
