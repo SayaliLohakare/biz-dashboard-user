@@ -9,7 +9,7 @@ export default function LoginLayout({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = Cookies.get('authToken2') || Cookies.get('authToken');
+    const token = Cookies.get('userinfo');
 
     if (token) {
       // Cookie exists → redirect to dashboard

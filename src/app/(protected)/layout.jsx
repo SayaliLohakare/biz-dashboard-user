@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import {apiUrl}  from '../../../constant/api';
 import {
   Box,
   Drawer,
@@ -38,7 +39,7 @@ export default function ProtectedLayout({ children }) {
 
   // Check cookie on mount
   useEffect(() => {
-    const token = Cookies.get("authToken2") || Cookies.get("authToken");
+    const token = Cookies.get("userinfo");
     if (!token) {
       router.push("/login");
     } else {
@@ -47,9 +48,19 @@ export default function ProtectedLayout({ children }) {
   }, [router]);
 
   // Logout function
-  const handleLogout = () => {
-    Cookies.remove("authToken2");
-    router.push("/login");
+  const handleLogout = async() => {
+     try {
+    const res = await fetch(`${apiUrl}/logout-user`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    const data = await res.json();
+    console.log(data.message);
+    Cookies.remove('userinfo');
+    router.push('/login');
+  } catch (err) {
+    console.error('Logout failed:', err);
+  }
   };
 
   if (loading) {
