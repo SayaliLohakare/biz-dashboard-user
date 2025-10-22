@@ -24,7 +24,7 @@ export default function LoginLayout({ children }) {
     return (
       <Box
         sx={{
-          height: '100vh',
+          height: 'auto',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',

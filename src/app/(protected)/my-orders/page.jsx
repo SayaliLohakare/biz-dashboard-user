@@ -16,7 +16,7 @@ import {
   Link as MuiLink,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
-import {apiUrl}  from '../../../../constant/api';
+import { apiUrl } from '../../../../constant/api';
 
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -42,7 +42,6 @@ export default function MyOrdersPage() {
           { withCredentials: true }
         );
 
-        // Flatten orders: one row per line_item
         const flattened = [];
         data.orders?.forEach((order) => {
           order.line_items?.forEach((item) => {
@@ -60,14 +59,13 @@ export default function MyOrdersPage() {
               quantity: item.quantity,
               product_total: item.total,
               purchaseLeads,
-              product_id: item.product_id, // ✅ make sure backend returns this
+              product_id: item.product_id,
             });
           });
         });
 
         setOrders(flattened);
       } catch (err) {
-        // console.error(err);
         setError(err.response?.data?.message || err.message);
       } finally {
         setLoading(false);
@@ -78,12 +76,11 @@ export default function MyOrdersPage() {
   }, []);
 
   const handleProductClick = (productId, productName) => {
-    // ✅ Store productId in cookie for data details page
     const productData = {
       id: productId,
       name: productName
     };
-    Cookies.set("selectedProduct", JSON.stringify(productData), { expires: 1 }); // 1 day expiry
+    Cookies.set("selectedProduct", JSON.stringify(productData), { expires: 1 });
     router.push("/my-orders/dataset");
   };
 
@@ -97,53 +94,67 @@ export default function MyOrdersPage() {
   if (error)
     return (
       <Box sx={{ p: 3 }}>
-        <Typography >{error}</Typography>
+        <Typography>{error}</Typography>
       </Box>
     );
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box
+      sx={{
+        p: { xs: 1, sm: 2, md: 3 },
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <Typography variant="h4" gutterBottom>
         My Orders
       </Typography>
 
-      <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 650 }} aria-label="orders table">
-          <TableHead>
-            <TableRow>
-              <TableCell>Sr. No.</TableCell>
-              <TableCell>Product</TableCell>
-              <TableCell>Purchased Leads</TableCell>
-              <TableCell>Product Total</TableCell>
-              <TableCell>Date</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {orders.map((row, index) => (
-              <TableRow key={`${row.order_id}-${index}`}>
-                <TableCell>{index + 1}</TableCell>
-                <TableCell>
-                  <MuiLink
-                    component="button"
-                    underline="hover"
-                    color="primary"
-                    onClick={() => handleProductClick(row.product_id,row.product_name)}
-                  >
-                    {row.product_name}
-                  </MuiLink>
-                </TableCell>
-                <TableCell>{row.purchaseLeads}</TableCell>
-                <TableCell>{`$${row.product_total}`}</TableCell>
-                <TableCell>
-                  {row.date
-                    ? new Date(row.date).toLocaleDateString()
-                    : "-"}
-                </TableCell>
+      {/* Table container scrolls only */}
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
+        <TableContainer component={Paper} sx={{ overflow: 'auto' }}>
+          <Table
+            stickyHeader
+            sx={{
+              minWidth: 0,
+              tableLayout: { xs: 'auto', sm: 'fixed' },
+              width: '100%',
+            }}
+            aria-label="orders table"
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell>Sr. No.</TableCell>
+                <TableCell>Product</TableCell>
+                <TableCell>Purchased Leads</TableCell>
+                <TableCell>Product Total</TableCell>
+                <TableCell>Date</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {orders.map((row, index) => (
+                <TableRow key={`${row.order_id}-${index}`}>
+                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>
+                    <MuiLink
+                      component="button"
+                      underline="hover"
+                      color="primary"
+                      onClick={() => handleProductClick(row.product_id, row.product_name)}
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      {row.product_name}
+                    </MuiLink>
+                  </TableCell>
+                  <TableCell>{row.purchaseLeads}</TableCell>
+                  <TableCell>{`$${row.product_total}`}</TableCell>
+                  <TableCell>{row.date ? new Date(row.date).toLocaleDateString() : "-"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
     </Box>
   );
 }

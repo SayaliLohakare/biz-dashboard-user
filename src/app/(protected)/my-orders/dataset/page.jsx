@@ -130,7 +130,7 @@ export default function DataTable() {
   const isSelected = (row) => selectedRows.some((r) => r.id === row.id);
 
   return (
-    <Box sx={{ width: "100%", p: 2 }}>
+    <Box sx={{ width: "100%",p:2 }}>
       {/* Header: Title + Export Button */}
       <Box
         sx={{
