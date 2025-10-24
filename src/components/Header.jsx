@@ -1,3 +1,4 @@
+'use client';
 import { 
   AppBar, 
   Toolbar, 
@@ -11,12 +12,15 @@ import {
 } from '@mui/icons-material';
 import Image from 'next/image'; // If using Next.js
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 
 export default function Header({ onMenuToggle, sidebarOpen }) {
+  const router = useRouter();
+
   const handleLogout = () => {
-    console.log('Logout clicked');
-    // Add your logout logic here
+    localStorage.removeItem('token');
+    router.push('/login');
   };
 
   return (
