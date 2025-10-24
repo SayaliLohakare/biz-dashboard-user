@@ -16,6 +16,7 @@ import {
   CircularProgress,
   Link as MuiLink,
   Button,
+  Pagination,
 } from "@mui/material";
 import { useSearchParams, useRouter } from "next/navigation";
 import { apiUrl } from "../../../../constant/api";
@@ -26,6 +27,8 @@ export default function DatasetPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [exportLoading, setExportLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -54,7 +57,7 @@ export default function DatasetPage() {
 
         const response = await axios.post(
           `${apiUrl}/v1/user-purchased-data`,
-          { productId, page: 1, limit: 10 },
+          { productId, page: currentPage, limit: 10 },
           { withCredentials: true }
         );
 
@@ -70,6 +73,7 @@ export default function DatasetPage() {
         }));
 
         setData(flattened);
+        setTotalPages(response.data.pagination?.totalPages || 1);
       } catch (err) {
         setError(err.response?.data?.message || err.message);
       } finally {
@@ -83,7 +87,7 @@ export default function DatasetPage() {
       setError("Product ID missing in URL");
       setLoading(false);
     }
-  }, [productId]);
+  }, [productId, currentPage]);
 
   const handleBack = () => {
     router.back();
@@ -118,6 +122,10 @@ export default function DatasetPage() {
     } finally {
       setExportLoading(false);
     }
+  };
+
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
   };
 
   return (
@@ -219,6 +227,15 @@ export default function DatasetPage() {
                 </TableBody>
               </Table>
             </TableContainer>
+          </Box>
+
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={handlePageChange}
+              color="primary"
+            />
           </Box>
         </Box>
       )}
