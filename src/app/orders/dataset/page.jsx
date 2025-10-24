@@ -1,8 +1,8 @@
-"use client";
 
+"use client";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import jwtDecode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import {
   Table,
   TableBody,
@@ -15,6 +15,7 @@ import {
   Box,
   CircularProgress,
   Link as MuiLink,
+  Button,
 } from "@mui/material";
 import { useSearchParams, useRouter } from "next/navigation";
 import { apiUrl } from "../../../../constant/api";
@@ -24,61 +25,99 @@ export default function DatasetPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [exportLoading, setExportLoading] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const productId = searchParams.get("productId");
   const productName = searchParams.get("name");
 
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("User not logged in");
-        setLoading(false);
-        return;
-      }
+  const [userId, setUserId] = useState(null);
 
-      const response = await axios.post(
-        `${apiUrl}/v1/user-purchased-data`,
-        {productId, page: 1, limit: 10 },
-        {
-          withCredentials: true, // fixed syntax
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const decoded = jwtDecode(token);
+      setUserId(decoded.id); // adjust depending on your token structure
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setError("User not logged in");
+          setLoading(false);
+          return;
         }
-      );
 
-      // Flatten API data to match table
-      const flattened = (response.data.data || []).map((row, index) => ({
-        id: row.id || index,
-        first_name: row.first_name || "-",
-        last_name: row.last_name || "-",
-        email: row.email || "-",
-        company_name: row.company_name || "-",
-        title: row.title || "-",
-        company_website: row.company_website || "-",
-        company_linkedin_url: row.company_linkedin_url || "-",
-      }));
+        const response = await axios.post(
+          `${apiUrl}/v1/user-purchased-data`,
+          { productId, page: 1, limit: 10 },
+          { withCredentials: true }
+        );
 
-      setData(flattened);
-    } catch (err) {
-      setError(err.response?.data?.message || err.message);
-    } finally {
+        const flattened = (response.data.data || []).map((row, index) => ({
+          id: row.id || index,
+          first_name: row.first_name || "-",
+          last_name: row.last_name || "-",
+          email: row.email || "-",
+          company_name: row.company_name || "-",
+          title: row.title || "-",
+          company_website: row.company_website || "-",
+          company_linkedin_url: row.company_linkedin_url || "-",
+        }));
+
+        setData(flattened);
+      } catch (err) {
+        setError(err.response?.data?.message || err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (productId) {
+      fetchData();
+    } else {
+      setError("Product ID missing in URL");
       setLoading(false);
     }
-  };
-
-  if (productId) {
-    fetchData();
-  } else {
-    setError("Product ID missing in URL");
-    setLoading(false);
-  }
-}, [productId]);
-
+  }, [productId]);
 
   const handleBack = () => {
     router.back();
+  };
+
+  const handleExport = async () => {
+    if (!userId || !productId) return;
+    setExportLoading(true);
+
+    try {
+      const response = await axios.post(
+        `${apiUrl}/export`,
+        { userId, productId },
+        {
+          withCredentials: true,
+          responseType: "blob",
+        }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `${productName || "PurchasedList"}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("Export failed:", err);
+    } finally {
+      setExportLoading(false);
+    }
   };
 
   return (
@@ -98,23 +137,32 @@ useEffect(() => {
         </Box>
       ) : (
         <Box sx={{ p: { xs: 1, sm: 2, md: 3 }, display: "flex", flexDirection: "column" }}>
-          <Typography variant="h4" color="black" gutterBottom>
-            Dataset for {productName || "Product"}
-          </Typography>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Typography variant="h4" color="black">
+              Dataset for {productName || "Product"}
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleExport}
+              disabled={exportLoading}
+            >
+              {exportLoading ? "Exporting..." : "Export CSV"}
+            </Button>
+          </Box>
 
           <Box sx={{ overflowX: "auto !important" }}>
-           <TableContainer
-  component={Paper}
-  sx={{
-    border: "1px solid #ccc",
-    maxHeight: "520px",
-    overflowX: "auto",
-    "&::-webkit-scrollbar": { width: "4px", height: "4px" }, // thinner scrollbar
-    "&::-webkit-scrollbar-thumb": { backgroundColor: "#2ea3f2", borderRadius: "8px" },
-    "&::-webkit-scrollbar-track": { backgroundColor: "#f1f1f1" },
-  }}
->
-
+            <TableContainer
+              component={Paper}
+              sx={{
+                border: "1px solid #ccc",
+                maxHeight: "520px",
+                overflowX: "auto",
+                "&::-webkit-scrollbar": { width: "4px", height: "4px" },
+                "&::-webkit-scrollbar-thumb": { backgroundColor: "#2ea3f2", borderRadius: "8px" },
+                "&::-webkit-scrollbar-track": { backgroundColor: "#f1f1f1" },
+              }}
+            >
               <Table stickyHeader sx={{ tableLayout: "auto", minWidth: 750 }} aria-label="dataset table">
                 <TableHead>
                   <TableRow>
