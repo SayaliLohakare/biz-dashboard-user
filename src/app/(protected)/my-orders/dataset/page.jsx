@@ -1,133 +1,260 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { useState, useEffect } from "react";
 import {
+  Box,
+  Paper,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
-  TableContainer,
-  Paper,
   Typography,
   CircularProgress,
-  Collapse,
-  Box,
-  IconButton,
+  Pagination,
+  Stack,
+  Tooltip,
+  Checkbox,
+  Button,
 } from "@mui/material";
-import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
-import { apiUrl } from "../../../../constant/api";
+import axios from "axios";
+import Cookies from "js-cookie";
+import { apiUrl } from "../../../../../constant/api";
 
-const OrdersTable = () => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [openRows, setOpenRows] = useState({}); // track expanded rows
+const columns = [
+  { field: "sr", headerName: "Sr No" },
+  { field: "company_name", headerName: "Company" },
+  { field: "company_website", headerName: "Website" },
+  {
+    field: "full_name",
+    headerName: "Name",
+    valueGetter: (params) => `${params.row.first_name || ""} ${params.row.last_name || ""}`,
+  },
+  { field: "email", headerName: "Email" },
+  { field: "title", headerName: "Title" },
+  { field: "company_linkedin_url", headerName: "LinkedIn" },
+];
+
+export default function DataTable() {
+  const [data, setData] = useState([]);
+  const [productName, setProductName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [userId, setUserId] = useState(null);
+  const [productId, setProductId] = useState(null);
+
+  const handleChange = (event, value) => setPage(value);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const userInfoCookie = Cookies.get("userinfo");
+      const storedProduct = Cookies.get("selectedProduct");
+
+      if (!userInfoCookie || !storedProduct) {
+        setError("Missing user or product information");
+        setLoading(false);
+        return;
+      }
+
+      const user = JSON.parse(userInfoCookie);
+      const product = JSON.parse(storedProduct);
+
+      setUserId(user.id);
+      setProductId(product.id);
+      setProductName(product.name);
+
+      const res = await axios.post(
+        `${apiUrl}/v1/user-purchased-data`,
+        { userId: user.id, productId: product.id, page },
+        { withCredentials: true }
+      );
+
+      setData(res.data.data || []);
+      setTotalPages(res.data.pagination.totalPages || 1);
+    } catch (err) {
+      console.error("Data fetch error:", err);
+      setError(err.response?.data?.message || "Failed to fetch data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    if (!userId || !productId) return;
+    setExportLoading(true);
+
+    try {
+      const response = await axios.post(
+        `${apiUrl}/export`,
+        { userId, productId },
+        {withCredentials: true,},
+        { responseType: "blob" }
+      );
+      console.log("Export response:", response);
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `${productName || "PurchasedList"}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("Export failed:", err);
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const res = await axios.get(`${apiUrl}/all-orders`, { withCredentials: true });
-        setOrders(res.data.data || []);
-      } catch (err) {
-        console.error("Error fetching orders:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchData();
+  }, [page]);
 
-    fetchOrders();
-  }, []);
-
-  if (loading) {
-    return (
-      <div style={{ textAlign: "center", marginTop: "2rem" }}>
-        <CircularProgress />
-      </div>
+  const handleSelectRow = (row) => {
+    const exists = selectedRows.find((r) => r.id === row.id);
+    setSelectedRows(
+      exists
+        ? selectedRows.filter((r) => r.id !== row.id)
+        : [...selectedRows, row]
     );
-  }
+  };
+
+  const isSelected = (row) => selectedRows.some((r) => r.id === row.id);
 
   return (
-    <TableContainer component={Paper} sx={{ marginTop: "2rem" }}>
-      <Typography variant="h6" sx={{ padding: 2 }}>
-        All Orders
-      </Typography>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell />
-            <TableCell>Sr No</TableCell>
-            <TableCell>Name</TableCell>
-            <TableCell>Email</TableCell>
-            <TableCell>Total</TableCell>
-            <TableCell>Status</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {orders.map((order, index) => {
-            const lineItems = Array.isArray(order.line_items)
-              ? order.line_items
-              : JSON.parse(order.line_items || "[]");
+    <Box sx={{ width: "100%", p: 2 }}>
+      {/* Header: Title + Export Button */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
+        <Typography variant="h5" fontWeight={600}>
+          {productName || "Purchased List"}
+        </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleExport}
+          disabled={exportLoading}
+        >
+          {exportLoading ? "Exporting..." : "Export"}
+        </Button>
+      </Box>
 
-            return (
-              <React.Fragment key={order.id}>
-                {/* Main order row */}
-                <TableRow>
-                  <TableCell>
-                    <IconButton
-                      size="small"
-                      onClick={() =>
-                        setOpenRows((prev) => ({ ...prev, [order.id]: !prev[order.id] }))
-                      }
+      {/* Table */}
+      <Paper sx={{ borderRadius: 3, boxShadow: 3 }}>
+        <TableContainer sx={{ overflowX: "auto" }}>
+          <Table stickyHeader sx={{ minWidth: 1000 }}>
+            <TableHead>
+              <TableRow sx={{ background: "#1976d2" }}>
+                {/* <TableCell sx={{ color: "white", fontWeight: "bold" }} /> */}
+                {columns.map((col) => (
+                  <TableCell
+                    key={col.field}
+                    sx={{
+                      color: "white",
+                      fontWeight: "bold",
+                      whiteSpace: "nowrap",
+                      backgroundColor: "#1976d2",
+                    }}
+                  >
+                    {col.headerName}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} align="center">
+                  <CircularProgress size={24} />
+                </TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} align="center" sx={{ color: "red" }}>
+                  {error}
+                </TableCell>
+              </TableRow>
+            ) : data.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} align="center">
+                  <Typography>No data found</Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              data.map((row, idx) => (
+                <TableRow key={row.id || idx} hover>
+                  {columns.map((col) => (
+                    <TableCell
+                      key={col.field}
+                      sx={{
+                        maxWidth: 150,
+                        whiteSpace: "nowrap",
+                        textOverflow: "ellipsis",
+                        overflow: "hidden",
+                      }}
                     >
-                      {openRows[order.id] ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-                    </IconButton>
-                  </TableCell>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell>{order.customer_name}</TableCell>
-                  <TableCell>{order.customer_email}</TableCell>
-                  <TableCell>{order.total}</TableCell>
-                  <TableCell>{order.status}</TableCell>
+                      <Tooltip
+                        title={
+                          col.field === "full_name"
+                            ? `${row.first_name || ""} ${row.last_name || ""}`
+                            : row[col.field] ?? "-"
+                        }
+                        placement="top"
+                        arrow
+                      >
+                        <span>
+                          {col.field === "sr"
+                            ? (page - 1) * 10 + idx + 1
+                            : col.field === "full_name"
+                            ? `${row.first_name || ""} ${row.last_name || ""}`
+                            : row[col.field] ?? "-"}
+                        </span>
+                      </Tooltip>
+                    </TableCell>
+                  ))}
                 </TableRow>
+              ))
+            )}
+          </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
 
-                {/* Sub-rows for products */}
-                <TableRow>
-                  <TableCell colSpan={6} style={{ paddingBottom: 0, paddingTop: 0 }}>
-                    <Collapse in={openRows[order.id]} timeout="auto" unmountOnExit>
-                      <Box margin={1}>
-                        <Typography variant="subtitle2">Products</Typography>
-                        <Table size="small">
-                          <TableHead>
-                            <TableRow>
-                              <TableCell>Product Name</TableCell>
-                              <TableCell>Price</TableCell>
-                              <TableCell>Lead Count</TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {lineItems.map((item) => (
-                              <TableRow key={item.id}>
-                                <TableCell>{item.name}</TableCell>
-                                <TableCell>{item.price}</TableCell>
-                                <TableCell>
-                                  {item.meta_data?.find((m) => m.key === "purchase_leads")?.value ||
-                                    "-"}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </Box>
-                    </Collapse>
-                  </TableCell>
-                </TableRow>
-              </React.Fragment>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </TableContainer>
+      {/* Pagination */}
+      <Stack
+        direction="row"
+        justifyContent="center"
+        alignItems="center"
+        sx={{ mt: 3 }}
+      >
+        <Pagination
+          count={totalPages}
+          page={page}
+          onChange={handleChange}
+          color="primary"
+          shape="rounded"
+          variant="outlined"
+          size="medium"
+        />
+      </Stack>
+    </Box>
   );
-};
-
-export default OrdersTable;
+}

@@ -72,7 +72,7 @@ export default function Login() {
       if (token) {
         // store in cookie for 1 hour
         // Cookies.set("authToken2", token, { expires: 5/24 }); // 5 hour
-        Cookies.set("userinfo", JSON.stringify(res.data.user), { expires: 8/24 }); // 5 hour
+        Cookies.set("userinfo", JSON.stringify(res.data.user), { expires: 1 }); // 5 hour
       }
         setMessage('Login successful!');
         router.push('/dashboard');

@@ -25,6 +25,8 @@ import {
   ExpandMore,
   Menu as MenuIcon,
 } from "@mui/icons-material";
+import AccountBoxIcon from '@mui/icons-material/AccountBox';
+import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
@@ -57,6 +59,7 @@ export default function ProtectedLayout({ children }) {
     const data = await res.json();
     console.log(data.message);
     Cookies.remove('userinfo');
+    Cookies.remove('selectedProduct');
     router.push('/login');
   } catch (err) {
     console.error('Logout failed:', err);
@@ -117,6 +120,20 @@ export default function ProtectedLayout({ children }) {
               <Inventory2 />
             </ListItemIcon>
             {open && <ListItemText primary="My Orders" />}
+          </ListItemButton>
+
+          <ListItemButton component={Link} href="/profile">
+            <ListItemIcon>
+              <AccountBoxIcon />
+            </ListItemIcon>
+            {open && <ListItemText primary="Profile" />}
+          </ListItemButton>
+
+          <ListItemButton component={Link} target="blank" href="https://support.bizprospex.com/portal/en/home?_gl=1*b3lpo7*_gcl_au*MjE0NDYzNTMwNy4xNzU2NzIzMDIw*_ga*MTcwMzc5NTIyOC4xNzU2NzIzMDIw*_ga_2ECS4224VJ*czE3NjEzNzczNDUkbzQyJGcxJHQxNzYxMzc3MzUxJGo1NCRsMCRoMjQxMTAzMTU.">
+            <ListItemIcon>
+              <SupportAgentIcon />
+            </ListItemIcon>
+            {open && <ListItemText primary="Support" />}
           </ListItemButton>
 
           {/* <ListItemButton component={Link} href="/search-people">
